@@ -113,6 +113,7 @@ class LabelConstraint:
         best_score = -1e9
         for j, label in self.label_map.items():
             score = scores[position, j].item()
+            triplet.label_scores[label] = score  # Fix: save logits from options
             if score > best_score:
                 best = label
                 best_score = score

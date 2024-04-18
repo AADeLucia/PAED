@@ -22,8 +22,8 @@ class RelationModel(DynamicModel):
     do_pretrain: bool
     encoder_name: str
     pipe_name: str
-    batch_size: int = 8 # 32  # 64
-    grad_accumulation: int = 16 # 1 #2
+    batch_size: int = 16  # 32  # 64
+    grad_accumulation: int = 2  # 1 #2
     random_seed: int = 42
     warmup_ratio: float = 0.2
     lr_pretrain: float = 3e-4

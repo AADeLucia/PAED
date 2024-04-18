@@ -233,8 +233,7 @@ class Trainer(nn.Module):
                     sents.append(Sentence(triplets=[triplet]))
 
             wr_Dataset(sents=sents).save(path_out)
-            
-    # deprecated
+
     def predict_single(self, path_in: str, path_out: str, tokenizer: Any, use_mask: bool = False):
 
         stem = Path(path_out).stem
@@ -365,7 +364,9 @@ class Trainer(nn.Module):
         return
 
     def load_model(self, model_ext, model_vae):
+        print(f"{model_ext=}")
         self.ext_model.load_state_dict(torch.load(model_ext))
+        print(f"{model_vae=}")
         self.vae.load_state_dict(torch.load(model_vae))
 
     def load_model_(self, model_ext, model_vae):
@@ -627,11 +628,11 @@ def run_eval(save_dir: str, path_model: str, path_test: str, data_name: str, spl
 
     trainer = Trainer(train_args, vae_args, data_args, 1, 1)
     if not last:
-#         path_model_ext = Path(path_model) / "pytorch_model.bin"
-        path_model_ext = Path(train_args.model_dir) / "pytorch_model.bin"
+        # path_model_ext = Path(path_model) / "pytorch_model.bin"
+        path_model_ext = Path(train_args.output_dir) / "pytorch_model.bin"
     else:
-        path_model_ext = Path(path_model) / "extraction_last.pt"
-    path_model_vae = Path(path_model) / "vae_final.pt"
+        path_model_ext = Path(path_model) / "extraction.pt"  # Fix: Changed from extraction_final.pt to extraction.pt
+    path_model_vae = Path(path_model) / "vae.pt"  # Fix: Changed from vae_final.pt to vae.pt
     if Path(str(path_model_ext)).exists() and Path(str(path_model_vae)).exists():
         trainer.load_model(path_model_ext, path_model_vae)
     else:
@@ -648,9 +649,8 @@ def run_eval(save_dir: str, path_model: str, path_test: str, data_name: str, spl
         random.seed(0)
         random.shuffle(data.sents)
         data.sents = data.sents[:limit]
-
-    path_in = str(Path(path_model) / f"pred_in_{mode}.jsonl")
-    path_out = str(Path(path_model) / f"pred_out_{mode}.jsonl")
+    path_in = str(Path(save_dir) / "runs" / f"pred_in_{mode}.jsonl")  # Fix: Changed from path_model to save_dir
+    path_out = str(Path(save_dir) / "runs" / f"pred_out_{mode}.jsonl")
     data.save(path_in)
 
     test_data, tokenizer = get_dataloader(['test', save_dir, model_args, train_args, data_args, vae_args,
@@ -666,7 +666,8 @@ def run_eval(save_dir: str, path_model: str, path_test: str, data_name: str, spl
         trainer.predict_multi(path_in=path_in, path_out=path_out, tokenizer=tokenizer)
 
     results = trainer.score(path_pred=path_out, path_gold=path_in)
-    path_results = str(Path(path_model) / f"results_{mode}.json")
+    # path_results = str(Path(path_model) / f"results_{mode}.json")
+    path_results = str(Path(save_dir) / "runs" / f"results_{mode}.json")  # Fix: changed from path_model to save_dir
     results.update(mode=mode, limit=limit, path_results=path_results)
     print(json.dumps(results, indent=2))
     with open(path_results, "w") as f:
@@ -716,48 +717,41 @@ class ExtractorArg(BaseModel):
 
 
 if __name__ == "__main__":
+    # Re-labeled dataset
+    run_name = "/runs"
+    data_name = os.environ['DATA']
+    save_dir = "outputs/wrapper/" + data_name + "/"
+    path_model = save_dir + run_name
+    path_train = f"{os.environ['PROJECT']}/data/{data_name}/train.jsonl"
+    path_dev = f"{os.environ['PROJECT']}/data/{data_name}/dev.jsonl"
+    path_test = f"{os.environ['PROJECT']}/data/{data_name}/test.jsonl"
+    split = "/"
 
-    num_test_labels = [10]  # [5, 10, 15]
-    seeds = [0]  # [0, 1, 2, 3, 4]
-    for n in num_test_labels:
-        for s in seeds:
-            split_ = f"unseen_{n}_seed_{s}"
-            print("processing split:", split_)
-            
-            run_name = '/runs'
-            data_name = 'u2t_map_all'
-            save_dir = "outputs/wrapper/" + data_name + "/" + split_
-            path_model = save_dir + run_name
-            path_train = "outputs/data/splits/zero_rte/" + data_name + "/" + split_ + "/train.jsonl"
-            path_dev = "outputs/data/splits/zero_rte/" + data_name + "/" + split_ + "/dev.jsonl"
-            path_test = "outputs/data/splits/zero_rte/" + data_name + "/" + split_ + "/test.jsonl"
-            split = split_ + "/"
-            main(
-                path_train=path_train,
-                path_dev=path_dev,
-                path_test=path_test,
-                save_dir=save_dir,
-                path_model=path_model,
-                data_name=data_name,
-                split=split,
-                last=False,
-                synthetic=True)  # set synthetic=False if there has been a synthetic.jsonl file in the directory.
-            run_eval(save_dir=save_dir,
-                     path_model=path_model,
-                     path_test=path_test,
-                     split=split,
-                     data_name=data_name,
-                     mode='single',
-                     last=False)
-            # run_eval(save_dir=save_dir,
-            #          path_model=path_model,
-            #          path_test=path_test,
-            #          data_name=data_name,
-            #          split=split,
-            #          mode='trsingle',
-            #          last=False)
-            # run_eval(save_dir=save_dir,
-            #          path_model=path_model,
-            #          path_test=path_test,
-            #          split=split,
-            #          mode='multi')
+    if os.environ.get("MODE", "") == "PREDICT":
+        # path_model = f"{os.environ['PROJECT']}/dependencies/PAED/outputs/wrapper/personaext_peacok/runs"
+        run_eval(save_dir=save_dir,
+                 path_model=path_model,
+                 path_test=path_test,
+                 split=split,
+                 data_name=data_name,
+                 mode='single',
+                 last=True)  # IDK
+    else:
+        main(
+            path_train=path_train,
+            path_dev=path_dev,
+            path_test=path_test,
+            save_dir=save_dir,
+            path_model=path_model,
+            data_name=data_name,
+            split=split,
+            last=False,
+            synthetic=True)  # set synthetic=False if there has been a synthetic.jsonl file in the directory.
+        run_eval(save_dir=save_dir,
+                 path_model=path_model,
+                 path_test=path_test,
+                 split=split,
+                 data_name=data_name,
+                 mode='single',
+                 last=False)
+

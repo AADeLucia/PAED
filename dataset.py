@@ -734,7 +734,7 @@ class ExtDataTr(SingleExtTr):
         indices = torch.topk(kl_div, k=k, dim=1, largest=True)[1]  # [B, k] B is the total number of relations
 
         # indices -> int selected vae_relations -> str relations
-        self.selected_relations_idx = vae_relations[indices]
+        self.selected_relations_idx = vae_relations[indices.detach().cpu()]
 
     def preprocess_fun(self):
 

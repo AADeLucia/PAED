@@ -39,7 +39,11 @@ class Dataset(BaseModel):
     sents: List[Sentence]
 
     def get_labels(self) -> List[str]:
-        return sorted(set(t.label for s in self.sents for t in s.triplets))
+        # Add PeaCoK labels as default
+        labels = sorted(set(t.label for s in self.sents for t in s.triplets if t.label!=""))
+        if not labels:
+            labels = sorted({"characteristic", "not", "goal_plan", "experience", "routine_habit"})
+        return labels
 
     @classmethod
     def combine_label(cls, dev_l, test_l):
@@ -215,9 +219,3 @@ class Generator(BaseModel):
         sents = [Sentence(triplets=lst) for lst in groups.values()]
         data = Dataset(sents=sents)
         data.save(path_out)
-
-
-if __name__ == "__main__":
-    
-    # Fire()
-
