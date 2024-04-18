@@ -1,3 +1,26 @@
+# PAED
+
+Comparative model from [PAED: Zero-Shot Persona Attribute Extraction in Dialogues (Zhu et al., ACL 2023)](https://aclanthology.org/2023.acl-long.544/)
+
+I modified a few files:
+
+* `modeling.py`: Change per-device batch size and gradient accumulation
+* `trainer_finetune.py`: Change batch size and data paths
+* `wrapper.py`: Dataloader
+
+## Setup
+```bash
+git clone git@github.com:Cyn7hia/PAED.git
+cd PAED
+conda create -n paed python=3.10
+conda activate paed
+pip install -r requirements.txt
+pip install torch torchvision torchaudio transformers==4.32 transformers[torch] jsonlines tqdm scikit-learn
+python -m nltk.downloader -d ${NLTK_DATA} all
+```
+
+---------------------------------
+
 <div align="center"><img src="https://github.com/Cyn7hia/PAED/blob/main/image/Meta-VAE_sampler.png" height="300px"/></div>
 <h2 align="center">PAED: Zero-Shot Persona Attribute Extraction in Dialogues</h2>
 
